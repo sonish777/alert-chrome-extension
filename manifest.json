@@ -3,7 +3,7 @@
     "name": "Gmail Attachments Checker",
     "version": "1.0",
     "description": "Simple extension to alert gmail attachments",
-    "permissions": ["webNavigation"],
+    "permissions": ["webNavigation", "storage"],
     "background": {
         "service_worker": "background.js"
     },
