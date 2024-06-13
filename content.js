@@ -26,29 +26,8 @@ function getSenderEmail() {
 // Function to get additional metadata
 function getMetadata() {
     return {
-        browser: navigator.userAgent,
-        platform: navigator.platform,
-        language: navigator.language,
-        vendor: navigator.vendor
+        browser: navigator.userAgent
     };
-}
-
-async function getLogsFromStorage() {
-    try {
-        return await chrome.storage.local.get(["logs"]);
-    } catch (error) {
-        console.log("Something went wrong when fetching logs from local store:", error);
-    }
-}
-
-async function setLogsToStorage() {
-    try {
-        const oldLogs = await getLogsFromStorage();
-        console.log("🚀 ~ setLogsToStorage ~ oldLogs:", oldLogs);
-        return await chrome.storage.local.set(["logs"]);
-    } catch (error) {
-        console.log("Something went wrong when fetching logs from local store:", error);
-    }
 }
 
 function sendMessageToBackground(message) {

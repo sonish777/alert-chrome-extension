@@ -10,7 +10,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 
         message.logs.forEach(function (log) {
             const row = tbody.insertRow();
-            const columns = [log.timestamp, log.service, log.event, JSON.stringify(log.metadata)];
+            const columns = [moment(log.timestamp).format("YYYY/MM/DD HH:mm A"), log.event, JSON.stringify(log.metadata)];
             columns.forEach(function (column) {
                 const cell = row.insertCell();
                 cell.textContent = column;
