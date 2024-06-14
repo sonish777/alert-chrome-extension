@@ -3,6 +3,7 @@
 // });
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+    console.log("🚀 ~ message:", message.action)
     if (message.action === "sendLog") {
         // Add the log to local storage
         addLogToStorage(message.logData);
@@ -17,6 +18,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 function addLogToStorage(logData) {
     chrome.storage.local.get("logs", function (data) {
         const logs = data.logs || [];
+        console.log("🚀 ~ logs:", logs)
         logs.push(logData);
         chrome.storage.local.set({ logs: logs });
         getLogsFromStorage();

@@ -3,6 +3,7 @@ console.log("CONTENT SCRIPTING GOES HERE");
 // Define the selectors for the send button and attachment elements
 const sendButtonSelector = 'div[role="button"][data-tooltip*="Send"]';
 const attachmentSelector = 'div[aria-label*="Attachment"]';
+const uploadingAttachmentSelector = 'div[aria-label*="Uploading attachment"]';
 // Function to get the recipient email address
 function getRecipientEmails() {
     const toFields = document.querySelectorAll('div[name="to"] div[data-hovercard-id][data-name]');
@@ -34,17 +35,35 @@ function sendMessageToBackground(message) {
     chrome.runtime.sendMessage(message);
 }
 
+function getAllAttachments() {
+    const attachments = [];
+    const attachmentEls = document.querySelectorAll(`${attachmentSelector} a`);
+    if (attachmentEls.length) {
+        attachmentEls.forEach((el) => {
+            const fileDetailsEl = el.querySelectorAll("div");
+            if (fileDetailsEl.length) {
+                const [fileName, fileSize] = [fileDetailsEl[0]?.innerText, fileDetailsEl[1]?.innerText];
+                if (!fileName && !fileSize) {
+                    return;
+                }
+                attachments.push(`${fileName}${fileSize ? ` ${fileSize}` : ""}`);
+            }
+        });
+    }
+    return attachments;
+}
+
 // Function to check and alert based on the presence of attachments
-function checkAttachments() {
-    const attachment = document.querySelector(attachmentSelector);
-    const hasAttachment = attachment && attachment.children.length > 0;
+function logEmailSend() {
     const recipientEmails = getRecipientEmails();
     const senderEmail = getSenderEmail();
-
+    const attachments = getAllAttachments();
     const logData = {
         timestamp: new Date().toISOString(),
         service: "GMAIL",
-        event: `Mail Sent to '${recipientEmails.join(", ")}' by '${senderEmail} ${hasAttachment ? "with" : "without"} attachments'`,
+        event: `Mail Sent to '${recipientEmails.join(", ")}' by '${senderEmail} ${
+            attachments.length ? `with following attachments:\n ${attachments.join(",\n")}` : "without attachments"
+        }'`,
         metadata: getMetadata()
     };
 
@@ -56,8 +75,30 @@ function addSendButtonListener() {
     const sendButtons = document.querySelectorAll(sendButtonSelector);
     if (sendButtons.length) {
         sendButtons.forEach((button) => {
-            button.addEventListener("click", checkAttachments);
+            button.addEventListener("click", logEmailSend);
         });
+    }
+}
+
+function logAttachmentAdded(addedNodes) {
+    if (!addedNodes || !(addedNodes instanceof HTMLElement)) {
+        return;
+    }
+    const attachmentEl = addedNodes.querySelectorAll(`${uploadingAttachmentSelector} tbody tr td span div`);
+    if (attachmentEl.length) {
+        console.log("🚀 ~ logAttachmentAdded ~ attachmentEl:", attachmentEl)
+        const [fileName, fileSize] = [attachmentEl[0]?.innerText, attachmentEl[1]?.innerText];
+        if (!fileName && !fileSize) {
+            return;
+        }
+        const senderEmail = getSenderEmail();
+
+        const logData = {
+            timestamp: new Date().toISOString(),
+            event: `Attachment Added by '${senderEmail}: ${fileName ?? ""}${fileSize ? ` ${fileSize}` : ""}'`,
+            metadata: getMetadata()
+        };
+        sendMessageToBackground({ action: "sendLog", logData: logData });
     }
 }
 
@@ -67,6 +108,7 @@ const observer = new MutationObserver((mutations) => {
         // Check if new nodes have been added
         if (mutation.addedNodes.length > 0) {
             addSendButtonListener();
+            logAttachmentAdded(mutation.addedNodes?.[0]);
         }
     });
 });
